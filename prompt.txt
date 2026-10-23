@@ -1,0 +1,71 @@
+You are helping me build a 3D web project step by step. I am a beginner at 3D and Three.js. I'm an IT student with some web development experience and I'm learning React. Please read this whole message first, because it is the full history of what I've done so far with another Claude.
+
+## 1. THE GOAL
+I want a personal "introduction world" in the browser. It is inspired by a Giftvera Instagram Reel (product "Ever Tide"), where someone scans a QR code and a loading screen opens a 3D sunset beach with two low-poly avatars, a letter, and a plane flying a banner saying "Emma, will you marry me? ~ Daniel".
+
+My version, "Ahmad Komail's World", has:
+- The same startup and entrance: a sunset loading screen with a progress bar, funny stage labels ("Planting the palms"), then an "Enter" button.
+- A plane flying across the sky pulling a banner that says "Welcome to Ahmad Komail's World".
+- After entering, a character I can walk around freely.
+- A billboard with my pictures.
+- Under/near it, a reception desk where a person sits showing a paper with a paragraph about me.
+- Setting (latest change): a LAKE. Behind the lake there is a forest of short and tall trees. In front there is only a beach. The lake should have realistic waves.
+- The character should look realistic, not black.
+
+## 2. MY RULES FOR YOU
+- Everything must be FREE (tools, models, hosting, libraries).
+- I use Windows, PowerShell, VS Code and the Chrome/Edge browser. Explain things step by step like I know nothing about 3D.
+- When I paste an error screenshot, find the exact cause and give the exact fix.
+- When I ask for code, give me the COMPLETE file (I usually ask for the full src/App.jsx), not small patches.
+- Keep answers short and actionable. Tell me what I should see after each step.
+- Commands must be run inside the project folder (I made the mistake of running them in C:\Users\Zafar once).
+
+## 3. TECH STACK AND SETUP (already done)
+- Project folder: C:\Users\Zafar\ever-tide (created with `npm create vite@latest ever-tide -- --template react`, JavaScript, linter Oxlint, Vite 8)
+- Dev server: `npm run dev -- --force` (the --force clears Vite's cache and fixed a white-page error), runs on http://localhost:5173 or 5174
+- Installed packages: react, react-dom, three, @react-three/fiber, @react-three/drei, three-stdlib
+- Everything lives in src/App.jsx. src/index.css contains only: body { margin: 0; overflow: hidden; }
+- Hosting later: Cloudflare Pages or Vercel (both free, I already use them).
+
+Folder structure:
+- public/models/: tree1.glb, tree2.glb, tree3.glb (free trees from poly.pizza), daniel.gltf and emma.gltf (from the free Quaternius "Ultimate Animated Character Pack", CC0, glTF version, animated, low-poly cartoon characters). Optional: character.fbx, idle.fbx, walk.fbx from Mixamo.
+- public/images/: photo1.jpg, photo2.jpg, photo3.jpg (my photos, portrait about 4:5, compressed)
+- public/textures/waternormals.jpg (from three.js examples, used by the Water shader)
+
+## 4. WHAT THE CURRENT App.jsx DOES (latest version)
+- Top constants I can edit: PLANE_MESSAGE, PHOTOS, ABOUT_TITLE, ABOUT_TEXT, SKIN_COLOR, USE_MIXAMO (false by default).
+- Entrance: a <Loader> overlay using drei's useProgress, a sunset gradient, a progress bar with stage text, and an "Enter the beach" button.
+- Lake: a Three.js Water shader (extend({ Water }) from three-stdlib) with waternormals.jpg, plus a FlatWater fallback inside an error boundary (class Safe).
+- Land: a big grass ground, shores on the far/left/right sides, a sand beach in front, and a wet-sand strip.
+- Forest: about 80 trees placed with a seeded random generator, reusing the 3 tree GLBs, with tall ones (bigger scale) and short ones (smaller scale), far shore dense and sides lighter.
+- Player: daniel.gltf (or Mixamo FBX if USE_MIXAMO=true), W A S D / arrow keys to walk relative to the camera, drag the mouse to rotate the camera, scroll to zoom, Q/E also rotate. It plays idle/walk animations by searching animation names with regex, is clamped to the beach area, and cannot walk through the reception desk.
+- Billboard: two posts, a dark board with a light frame, a "MEET AHMAD" title, and three PhotoFrame components that load textures with TextureLoader (gray fallback if missing).
+- Reception: a desk with a "RECEPTION" label, emma.gltf sitting behind it (lowered into the sand to hide her legs), and a paper with fake text lines.
+- PaperCard: an HTML overlay with the full ABOUT_TEXT that fades in when the player is within 5 units of the desk.
+- FlyingPlane: a simple plane made from primitives, with a banner (drei <Text>) that loops across the sky.
+- A "Hint" overlay shows the controls after entering.
+- Characters' materials: I run fixMaterials() to set metalness=0, roughness=1 and recolor any material whose name contains "skin" to SKIN_COLOR, and it console.logs every material name.
+
+## 5. PROBLEMS WE ALREADY SOLVED (don't repeat these mistakes)
+- White page with "Could not resolve react-dom/client imported by @react-three/drei": installed packages while the server was running or in the wrong folder. Fix: run npm install inside ever-tide, then `npm run dev -- --force`.
+- "Missing script: dev": I ran the command in C:\Users\Zafar instead of ever-tide.
+- .gltf vs .glb: the Quaternius characters are .gltf, so the file names in code must end in .gltf.
+- Characters looked black: caused by metalness=1 in the exported materials. Fix: metalness 0 and a skin color.
+- Scrollbars on the page: fixed with body { margin:0; overflow:hidden }.
+
+## 6. CURRENT STATUS
+I just replaced App.jsx with the lake version and was about to run `npm run dev -- --force`. I have NOT yet confirmed it renders correctly. Still unknown:
+- The real animation names of the characters (the code logs "player animations:" and "daniel material:" in the F12 Console; ask me for those lines if the walking or skin looks wrong).
+- Whether the skin recolor works, since I don't know the real material names.
+- Performance with about 80 trees on my machine.
+
+## 7. LIKELY NEXT STEPS
+1. Fix whatever breaks in the lake version (I'll send screenshots and console errors).
+2. Make the player look realistic (Mixamo character + idle and walk animations, set USE_MIXAMO = true), and possibly make the receptionist realistic too.
+3. Improve the water if needed, and the overall sunset look.
+4. Add a mobile joystick so it works on phones.
+5. Add background music and a sound toggle.
+6. Optimize (fewer trees, compressed GLBs) and deploy for free on Cloudflare Pages so I can share the link.
+7. Optional: a builder form that makes a personalized link for other people, like Giftvera.
+
+Below is my current src/App.jsx. Please read it, tell me in 3 lines that you understood the project, and wait for my next message.
