@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { Component, Suspense, useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import { useGLTF, useAnimations } from '@react-three/drei'
+import { assetUrl } from './assetUrl.js'
 
 /* ============ EDIT THESE ============ */
-const WAVE_FILE = '/models/water-wave.glb'
+const WAVE_FILE = assetUrl('/models/water-wave.glb')
 const WAVE_WIDTH = 30 // width of ONE wave piece (world units)
 const WAVE_COPIES = 5 // how many pieces side by side along the shore
 const WAVE_Z = -4 // 0 = water's edge, more negative = further out in the lake
@@ -59,7 +60,32 @@ function WavePiece({ x }) {
   )
 }
 
-export default function Wave() {
+function WaveFallback() {
+  return (
+    <mesh rotation-x={-Math.PI / 2} position={[0, WAVE_Y, WAVE_Z]}>
+      <planeGeometry args={[WAVE_WIDTH * WAVE_COPIES, 1]} />
+      <meshBasicMaterial color="#d8f5f2" transparent opacity={0.35} />
+    </mesh>
+  )
+}
+
+class WaveErrorBoundary extends Component {
+  state = { failed: false }
+
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+
+  componentDidCatch(error) {
+    console.error('Optional wave model failed to load; showing a simple wave fallback.', error)
+  }
+
+  render() {
+    return this.state.failed ? <WaveFallback /> : this.props.children
+  }
+}
+
+function WaveScene() {
   const outer = useRef()
 
   useFrame((state) => {
@@ -75,5 +101,15 @@ export default function Wave() {
         <WavePiece key={i} x={(i - (WAVE_COPIES - 1) / 2) * spacing} />
       ))}
     </group>
+  )
+}
+
+export default function Wave() {
+  return (
+    <WaveErrorBoundary>
+      <Suspense fallback={<WaveFallback />}>
+        <WaveScene />
+      </Suspense>
+    </WaveErrorBoundary>
   )
 }

@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { Canvas, extend, useFrame, useLoader, useThree } from '@react-three/fiber'
 import { Sky, useGLTF, useFBX, useAnimations, Text, useProgress, PerformanceMonitor } from '@react-three/drei'
 import { Water } from 'three-stdlib'
+import { assetUrl } from './assetUrl.js'
 
 extend({ Water })
 
@@ -43,7 +44,7 @@ const CHARACTERS = [
 const ANIMS = { idle: 'Idle.fbx', walk: 'Walking.fbx', run: 'Fast Run.fbx' }
 /* ==================================== */
 
-const modelUrl = (f) => encodeURI(`/models/${f}`)
+const modelUrl = (f) => encodeURI(assetUrl(`/models/${f}`))
 
 const preloadCharacter = (file) =>
   file.endsWith('.fbx') ? useFBX.preload(modelUrl(file)) : useGLTF.preload(modelUrl(file))
@@ -302,7 +303,7 @@ class Safe extends Component {
 }
 
 function Tree({ file, position, scale = 1, rotation = 0, tint = 0.5 }) {
-  const { scene } = useGLTF(`/models/${file}`)
+  const { scene } = useGLTF(modelUrl(file))
   const copy = useMemo(() => {
     const c = scene.clone()
     c.traverse((o) => {
@@ -365,7 +366,7 @@ function fitScale(object, height, fallback = 1) {
 
 /* standing character (the receptionist) */
 function Character({ file, position, scale = 1, rotation = 0, height }) {
-  const { scene, animations } = useGLTF(`/models/${file}`)
+  const { scene, animations } = useGLTF(modelUrl(file))
   const fit = useMemo(() => (height ? fitScale(scene, height, scale) : scale), [scene, height, scale])
   const { actions, names } = useAnimations(animations, scene)
 
@@ -723,7 +724,7 @@ function Player({ phase, file, look, onParts, onNearDesk, onReady }) {
 // endless ocean
 function Ocean() {
   const ref = useRef()
-  const normals = useLoader(THREE.TextureLoader, '/textures/waternormals.jpg')
+  const normals = useLoader(THREE.TextureLoader, assetUrl('/textures/waternormals.jpg'))
   const geom = useMemo(() => new THREE.PlaneGeometry(8000, 8000), [])
   const config = useMemo(() => {
     normals.wrapS = normals.wrapT = THREE.RepeatWrapping
@@ -776,7 +777,7 @@ function FlatOcean() {
 
 // turquoise lagoon in the middle of the island
 function LagoonWater() {
-  const normals = useLoader(THREE.TextureLoader, '/textures/waternormals.jpg')
+  const normals = useLoader(THREE.TextureLoader, assetUrl('/textures/waternormals.jpg'))
   const tex = useMemo(() => {
     const t = normals.clone()
     t.wrapS = t.wrapT = THREE.RepeatWrapping
@@ -947,9 +948,9 @@ function PlainSand() {
 function TexturedSand() {
   const { gl } = useThree()
   const tex = useLoader(THREE.TextureLoader, [
-    '/textures/sand_diff.jpg',
-    '/textures/sand_nor.jpg',
-    '/textures/sand_rough.jpg',
+    assetUrl('/textures/sand_diff.jpg'),
+    assetUrl('/textures/sand_nor.jpg'),
+    assetUrl('/textures/sand_rough.jpg'),
   ])
   const [diff, nor, rough] = tex
   const blotch = useMemo(() => makeBlotchTex(), [])
@@ -999,9 +1000,9 @@ function PlainGrass() {
 function TexturedGrass() {
   const { gl } = useThree()
   const tex = useLoader(THREE.TextureLoader, [
-    '/textures/grass_diff.jpg',
-    '/textures/grass_nor.jpg',
-    '/textures/grass_rough.jpg',
+    assetUrl('/textures/grass_diff.jpg'),
+    assetUrl('/textures/grass_nor.jpg'),
+    assetUrl('/textures/grass_rough.jpg'),
   ])
   const [diff, nor, rough] = tex
   useMemo(() => prepareTextures(gl, tex, GRASS_TILE), [gl, tex])
@@ -1436,13 +1437,15 @@ function PhotoFrame({ src, position }) {
   useEffect(() => {
     let alive = true
     new THREE.TextureLoader().load(
-      src,
+      assetUrl(src),
       (t) => {
         t.colorSpace = THREE.SRGBColorSpace
         if (alive) setTex(t)
       },
       undefined,
-      () => {}
+      (error) => {
+        console.warn(`Optional billboard photo could not be loaded: ${src}`, error)
+      }
     )
     return () => {
       alive = false
@@ -1503,7 +1506,9 @@ function Reception() {
   return (
     <group position={DESK_POS} rotation={[0, -2.0, 0]}>
       {/* receptionist sitting behind the desk (legs hidden under the sand) */}
-      <Character file="emma.gltf" height={RECEPTIONIST_HEIGHT} position={[0, -0.2, -0.8]} />
+      <Safe fallback={null}>
+        <Character file="emma.gltf" height={RECEPTIONIST_HEIGHT} position={[0, -0.2, -0.8]} />
+      </Safe>
 
       <mesh position={[0, 0.5, 0]} castShadow={SHADOWS} receiveShadow={SHADOWS}>
         <boxGeometry args={[3.2, 1, 1.1]} />
@@ -2101,7 +2106,9 @@ export default function App() {
           <Safe fallback={<LagoonPlain />}>
             <LagoonWater />
           </Safe>
-          <Forest />
+          <Safe fallback={null}>
+            <Forest />
+          </Safe>
           <Billboard />
           <Reception />
           <Suspense fallback={null}>
